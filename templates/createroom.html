@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <title>Create Room</title>
+    </head>
+    <body>
+        <img src="https://wallpaperaccess.com/full/628286.jpg" class = "mb-4" alt="Responsive image" style = "width: 100%; height: 200px; object-fit: cover; ">
+        <div class = "container" id="container">
+            <form name="dataset" id="dataset" class="form-inline" action="{{ url_for('receive') }}" method="post">
+              <p id="questionLabel">Question 1:</p>
+                <div class="div-size row">
+                    <br>
+                    <select class="form-select test form-control col-4" onchange="blackBorder(this)" id="correctAns">
+                      <option selected disabled value="0">Correct Ans</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="3">4</option>
+                    </select>
+                    <span class="form-group green-border-focus form-outline col-5" id="questionHolder">
+                    <textarea class="form-control question-width" id="question" rows="1" placeholder="Question" onkeydown="return validate(event)"></textarea>
+                    </span>
+                    <button type="button" id="removeQuestion" class="x-right button-settings" onclick="deleteElement(this)" name = "1"> 
+                    <img src="https://www.pngall.com/wp-content/uploads/5/Delete-Red-X-Button-Transparent.png" class="x-settings" width="40" height="40"/>
+                    </button>
+                </div>
+              <div class="div-size row" id="answerDiv">
+                 <span class="form-group yellow-border-focus form-outline col-3" id="answerHolder" style="width: 40%">
+                    <textarea class="form-control" id="answer" rows="1" placeholder="Answer" onkeydown="return validate(event)"></textarea>
+                    </span>
+                <span class="form-group yellow-border-focus form-outline col-3" id="answerHolder" style="width: 40%">
+                    <textarea class="form-control" id="answer" rows="1" placeholder="Answer" onkeydown="return validate(event)"></textarea>
+                    </span>
+                <span class="form-group yellow-border-focus form-outline col-3" id="answerHolder" style="width: 40%">
+                    <textarea class="form-control" id="answer" rows="1" placeholder="Answer" onkeydown="return validate(event)"></textarea>
+                    </span>
+                <span class="form-group yellow-border-focus form-outline col-3" id="answerHolder" style="width: 40%">
+                    <textarea class="form-control" id="answer" rows="1" placeholder="Answer" onkeydown="return validate(event)"></textarea>
+                    </span>
+              </div>
+            </form>
+            <div class="row justify-content-between">
+                <div class="col-4">
+                    <input type="button" class="btn btn-outline-primary question-button-padding" id="addQuestion" value="Add Question">
+                </div>
+                <div class="col-4">
+                    <input type="button" class="btn btn-outline-success question-button-padding" id="done" value="Done">
+                </div>
+            </div>
+            <div class="col text-center">
+                <p hidden id="counter"> 1 </p>
+            </div>
+        </div>
+        <style>
+            html, body {
+            width:100%;
+            height:100%;
+            margin:0;
+            padding:0;
+              display: flex;
+              flex-direction: column;
+              justify-content: flex-start;
+              align-items: flex-end;
+            }
+            .button-settings {
+            background-color: transparent;
+            width:7vw;
+            height:7vh;
+            border: none;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            }
+            .green-border-focus .form-control:focus {
+            border: 1px solid #8bc34a;
+            box-shadow: 0 0 0 0.2rem rgba(139, 195, 74, .25);
+            }
+            .yellow-border-focus .form-control:focus {
+            border: 1px solid #faf200;
+            box-shadow: 0 0 0 0.2rem rgba(250, 242, 0, .25);
+            }
+            .blue-border-focus .form-control:focus {
+            border: 1px solid #76ddf5;
+            box-shadow: 0 0 0 0.2rem rgba(118, 221, 245, .25);
+            }
+            .spacer {
+            margin-right: 10vw;
+            }
+            .div-size{
+            width: 100%;
+            height: 100%;
+            margin-bottom: 30px;
+            padding:0;
+            }
+            .question-button-padding{
+            margin-bottom: 30vh;
+            }
+            .question-width {
+              min-width:100%;
+            }
+            .x-settings{
+            width:100%
+            height:auto;
+            }
+            .test{
+            margin-top:1.5vh;
+            }
+            .x-right{
+            position: relative;
+            left: 10%;
+            right:0;
+            margin-top: 0vw;
+            float: right;
+            }
+        </style>
+        <script>
+            function myCallback(data) {
+               window.location.replace(data);
+            }
+            function blackBorder(element) {
+              console.log("hi");
+              element.style.borderColor = "green";
+            }
+            document.getElementById("done").onclick = function() {
+            var data = new Object();
+            data.questions = [];
+            data.answers = [];
+            data.correctAnswer = [];
+            var go = true;
+            var questions = document.querySelectorAll('[id=question]');
+            if(questions.length == 0) {
+              go = false;
+            }
+            for(var i = 0; i < questions.length; i++) {
+             data.questions.push(questions[i].value.trim());
+             if(questions[i].value.trim() == "") {
+               go = false;
+               questions[i].classList.remove("is-valid");
+               questions[i].classList.add("is-invalid");
+             }
+            }
+            var selections = document.querySelectorAll('[id=correctAns]');
+            var tempArray = [];
+            for(var i = 0; i < selections.length; i++) {
+              data.correctAnswer.push(selections[i].value);
+              if(selections[i].value == 0) {
+                go = false;
+                selections[i].style.borderColor = "red";
+              }
+            }
+            var answers = document.querySelectorAll('[id=answer]');
+            for(var i = 0; i < answers.length; i++) {
+              tempArray.push(answers[i].value.trim());
+              if(tempArray.length == 4) {
+                data.answers.push(tempArray);
+                tempArray = [];
+              }
+              if(answers[i].value.trim() == "") {
+               go = false;
+              answers[i].classList.remove("is-valid");
+               answers[i].classList.add("is-invalid");
+             }
+            }
+            if(go) {
+              var jsonString= JSON.stringify(data);
+               var xhttp = new XMLHttpRequest();
+               xhttp.onreadystatechange = function()
+              {
+                  if (xhttp.readyState == 4 && xhttp.status == 200)
+                  {
+                      myCallback(xhttp.responseText); 
+                  }
+              }; 
+               xhttp.open("POST", "https://HeroHunt.allistairishmae.repl.co/receiver", true);
+               xhttp.setRequestHeader("Content-type", "application/json");
+               xhttp.send(jsonString);
+              }
+            }
+            document.getElementById("addQuestion").onclick = function() {
+            var form = document.getElementById("dataset");
+            var newQuestion = document.createElement("textarea");
+            var div = document.createElement("div");
+            var answerBigDiv = document.createElement("div");
+            answerBigDiv.id = "answerDiv";
+            answerBigDiv.className = "div-size row";
+            var x = document.createElement("button");
+            var questionText = document.createElement("p");
+            questionText.id = "questionLabel"
+            var counter = document.getElementById("counter");
+            questionText.appendChild(document.createTextNode("Question " + (parseInt(counter.innerHTML) + 1) + ":"));
+            counter.innerHTML = (parseInt(counter.innerHTML) + 1);
+            x.type = "button";
+            x.id = "removeQuestion";
+            x.className = "x-right button-settings";
+            x.setAttribute("onclick", "deleteElement(this)");
+            x.name = counter.innerHTML;
+            var img = document.createElement("img");
+            img.src = "https://www.pngall.com/wp-content/uploads/5/Delete-Red-X-Button-Transparent.png";
+            img.width="40";
+            img.height="40";
+            img.className = "x-settings";
+            var select = document.createElement("select");
+            select.className = "form-select test form-control col-4";
+            select.id="correctAns";
+            select.setAttribute("onchange", "blackBorder(this)");
+            let option = document.createElement("option");
+            option.value = 0;
+            option.innerHTML = "Correct Ans"
+            option.disabled = true;
+            option.selected = true;
+            select.appendChild(option);
+            for(let i = 0; i < 4; i++) {
+              let option = document.createElement("option");
+              option.value = "" + (i + 1);
+              option.innerHTML = i + 1;
+              select.appendChild(option);
+            }
+            div.appendChild(select);
+            x.appendChild(img);
+            div.className = "div-size row"
+            var questionDiv = document.createElement("div");
+            questionDiv.className = "form-group green-border-focus form-outline col-5"
+            newQuestion.className = "form-control question-width";
+            newQuestion.id = "question";
+            newQuestion.rows = "1";
+            newQuestion.placeholder = "Question";
+            newQuestion.setAttribute("onkeydown",  "return validate(event)");
+            questionDiv.appendChild(newQuestion);
+            div.appendChild(questionDiv);
+            for(let i = 0; i < 4; i++) {
+              var answerDiv = document.createElement("div");
+              answerDiv.className = "form-group red-border-focus form-outline col-3"     
+              answerDiv.style = "width: 40%"
+              var newAnswer = document.createElement("textarea");
+              newAnswer.className = "form-control";
+              newAnswer.rows = "1";
+              newAnswer.placeholder = "Answer";
+              newAnswer.id = "answer";
+              answerDiv.appendChild(newAnswer);
+              answerDiv.setAttribute("onkeydown",  "return validate(event)");
+              answerBigDiv.appendChild(answerDiv);
+            }
+            form.appendChild(questionText);
+            var button = div.appendChild(x);
+            form.appendChild(div);
+            form.appendChild(answerBigDiv);
+            }
+            function deleteElement(element){
+            element.parentElement.remove();
+            var questions = document.querySelectorAll("[id=questionLabel]");
+            var buttons = document.querySelectorAll("[id=removeQuestion]");
+            var answerDivs = document.querySelectorAll("[id=answerDiv]");
+            var loop = false;
+            for(let i = 0; i < questions.length; i++) {
+            if(i + 1 == parseInt(element.name)) {
+              questions[i].remove();
+              answerDivs[i].remove();
+              loop = true;
+            }
+            else {
+              if(!loop) {
+                questions[i].innerHTML = "Question " + (i + 1) + ":";
+              }
+              else {
+                questions[i].innerHTML = "Question " + (i) + ":";
+              }
+            }
+            }
+            for(let i = 0; i < buttons.length; i++) {
+              buttons[i].name = "" + (i + 1);
+            }
+            var counter = document.getElementById("counter");
+            counter.innerHTML = questions.length - 1;
+            }
+            function validate(evt) {
+            evt = (evt) ? evt : window.event;
+            var charCode = (evt.which) ? evt.which : evt.keyCode;
+            if(event.keyCode > 40) {
+            event.target.classList.remove("is-invalid");
+            event.target.classList.add("is-valid");
+            }
+            else if(event.target.value.length <= 1){
+            event.target.classList.remove("is-valid");
+            event.target.classList.add("is-invalid");
+            }
+            }
+        </script>
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    </body>
+</html>

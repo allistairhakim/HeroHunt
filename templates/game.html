@@ -1,0 +1,279 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+		<!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Flask-SocketIO Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
+	<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+		<link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+						log = document.getElementById("terminal") 
+						log.innerHTML += 'Initiating websocket connection... <br>'
+						var progressBar = document.getElementById("progress_bar")
+						myHealth = 100;
+						theirHealth = 100;
+						opponentUsername = '';
+						points = 0;
+						var jsondata;
+						var correctOption = -1;
+						var currentQuestion = 0;
+						drawWeapons();
+						function hex_to_ascii(str1)
+						 {
+							var hex  = str1.toString();
+							var str = '';
+							for (var n = 0; n < hex.length; n += 2) {
+								str += String.fromCharCode(parseInt(hex.substr(n, 2), 16));
+							}
+							return str;
+						 }
+						function updateButtons(questionNum) {
+							try {
+								correctOption = jsondata.correctAnswer[questionNum]
+								document.getElementById("option1").innerHTML = jsondata.answers[questionNum][0]
+								document.getElementById("option2").innerHTML = jsondata.answers[questionNum][1]
+								document.getElementById("option3").innerHTML = jsondata.answers[questionNum][2]
+								document.getElementById("option4").innerHTML = jsondata.answers[questionNum][3]
+								document.getElementById("question").innerHTML = jsondata.questions[questionNum]
+							} catch (error) {
+							  currentQuestion = 0;
+								updateButtons(currentQuestion);
+							}
+
+								
+							}
+						if('{{questions}}' != 'None') {
+							console.log('{{questions}}')
+							data = hex_to_ascii('{{questions}}');
+							console.log(data)
+							jsondata = JSON.parse(data)
+							console.log(jsondata.questions);
+							updateButtons(0)
+						} else {
+							console.log("NO DATA FOUND")
+						}
+            var socket = io();
+
+            socket.on('connect', function() {
+							log.innerHTML += 'Connected successfully <br>'
+            });
+
+						
+						function updateHealth() {
+							//document.getElementById("myHealth").innerHTML = myHealth;
+							//document.getElementById("theirHealth").innerHTML = theirHealth;
+						}
+
+						function updateProgress() {
+							progressBar.style.width = (100 * points)/1000 + "%"; 
+						}
+					
+            socket.on('my_response', function(msg, cb) {
+								console.log(msg.match)
+								console.log('{{room_code}}')
+								if(msg.match.normalize().replace(/\s/g, '') == '{{room_code}}'.normalize().replace(/\s/g, '')) {
+									console.log("oh naw")
+									log.innerHTML += msg.data + '<br>'
+									//$('#log').append(msg.data + '<br>').html();
+								}
+                if (cb)
+                    cb();
+            });
+						socket.on('get_data', function(msg, cb) {
+							if('{{questions}}' == 'None' && msg.match.normalize().replace(/\s/g, '') == '{{room_code}}'.normalize().replace(/\s/g, '')) {
+								console.log(msg.data)
+								data = hex_to_ascii(msg.data);
+								console.log(data)
+								jsondata = JSON.parse(data)
+								console.log(jsondata.questions);
+								updateButtons(0)
+							}
+            });
+						socket.on('connect_response', function(msg, cb) {
+								console.log(msg.match)
+								console.log('{{room_code}}')
+								log.innerHTML += msg.data + "<br>"
+								if(msg.username != '{{username}}' && msg.match.normalize().replace(/\s/g, '') == '{{room_code}}'.normalize().replace(/\s/g, '')) {
+									console.log("sheesh");
+									//$('#log').append(msg.username + " connected to room {{room_code}}" + '<br>').html();
+									if(msg.starting) {
+										socket.emit('connecting', {data: '{{username}} connected to room {{room_code}}', match: '{{room_code}}', username: '{{username}}', starting: false});
+									}
+									if('{{questions}}' != 'None') {
+										socket.emit('send_data', {data: '{{questions}}', match: '{{room_code}}'})
+									}
+									setNames('{{username}}', msg.username)
+									log.innerHTML += "Match starting! <br>"
+									$('#log').append("Match starting!" + '<br>').html();
+									//document.getElementById("me").innerHTML = '{{username}}';
+									//document.getElementById("them").innerHTML = msg.username;
+									opponentUsername = msg.username;
+									drawWeapons();
+									updateHealth();
+								}
+                if (cb)
+                    cb();
+            });
+							socket.on('health_update', function(msg, cb) {
+								console.log(msg.match)
+								console.log('{{room_code}}')
+								if(msg.username != '{{username}}' && msg.match.normalize().replace(/\s/g, '') == '{{room_code}}'.normalize().replace(/\s/g, '')) {
+									myHealth -= msg.damage;
+									socket.emit('my_event', {data: msg.username + ' dealt ' + msg.damage + ' damage to {{username}} (' + myHealth + ')', match: '{{room_code}}'})
+									hitEnemy();
+									//log.innerHTML += msg.username + ' dealt ' + msg.damage + ' damage to {{username}}';
+									if(myHealth <= 0) {								window.location.replace("https://HeroHunt.allistairishmae.repl.co/lose")
+									}
+								} 
+								updateHealth();
+                if (cb)
+                    cb();
+            	});
+						socket.on('healing', function(msg, cb) {
+								console.log(msg.match)
+								console.log('{{room_code}}')
+								if(msg.username != '{{username}}' && msg.match.normalize().replace(/\s/g, '') == '{{room_code}}'.normalize().replace(/\s/g, '')) {
+									theirHealth += msg.healing;
+									socket.emit('my_event', {data: msg.username + ' healed for ' + msg.healing + "health (" + theirHealth + ")", match: '{{room_code}}'})
+									//log.innerHTML += msg.username + ' dealt ' + msg.damage + ' damage to {{username}}';
+								} 
+								updateHealth();
+                if (cb)
+                    cb();
+            });
+
+            // Ping Pong hehe
+            var ping_pong_times = [];
+            var start_time;
+            window.setInterval(function() {
+                start_time = (new Date).getTime();
+                $('#transport').text(socket.io.engine.transport.name);
+                socket.emit('my_ping');
+            }, 1000);
+
+            socket.on('my_pong', function() {
+                var latency = (new Date).getTime() - start_time;
+                ping_pong_times.push(latency);
+                ping_pong_times = ping_pong_times.slice(-30); // keep last 30 samples
+                var sum = 0;
+                for (var i = 0; i < ping_pong_times.length; i++)
+                    sum += ping_pong_times[i];
+                $('#ping-pong').text(Math.round(10 * sum / ping_pong_times.length) / 10);
+            });
+
+						//Tells other person when connected
+						socket.emit('connecting', {data: '{{username}} connected to room {{room_code}}', match: '{{room_code}}', username: '{{username}}', starting: true});
+						document.getElementById('light_attack').onclick = function() {
+							if(points > 100) {
+								damage = 10;
+	   						theirHealth -= damage;
+								socket.emit('attack', {'damage': damage, 'username': '{{username}}', match: '{{room_code}}'});
+								light_attack_anim();
+								points -= 100;
+								updateProgress();
+								if(theirHealth <= 0) window.location.replace('https://HeroHunt.allistairishmae.repl.co/win')
+							}
+						};
+						document.getElementById('heavy_attack').onclick = function() {
+							if(points > 170) {
+								damage = 20;
+	   						theirHealth -= damage;
+								socket.emit('attack', {'damage': damage, 'username': '{{username}}', match: '{{room_code}}'});
+								heavy_attack_anim();
+								points -= 170;
+								updateProgress();
+								if(theirHealth <= 0) window.location.replace('https://HeroHunt.allistairishmae.repl.co/win')
+							}
+						};
+						document.getElementById('heal').onclick = function() {
+							if(points > 130) {
+								myHealth += 15;
+								socket.emit('heal', {'healing': 15, 'username': '{{username}}', match: '{{room_code}}'});
+								heal_anim();
+								points -= 130;
+								updateProgress();
+							}
+						};
+						document.getElementById('evade').onclick = function() {
+							console.log("AAA")
+							hitEnemy();
+						};
+						
+						document.getElementById('option1').onclick = function() {
+							if(correctOption == 1) {points += 200; log.innerHTML += 'Correct! Gained 200 points<br>'} else {log.innerHTML += 'Incorrect. You\'ll get it next time!<br>'}
+							updateProgress();
+							currentQuestion += 1;
+							updateButtons(currentQuestion)
+						}
+						document.getElementById('option2').onclick = function() {
+							if(correctOption == 2) {points += 200; log.innerHTML += 'Correct! Gained 200 points<br>'} else {log.innerHTML += 'Incorrect. You\'ll get it next time!<br>'}
+							updateProgress();
+							currentQuestion += 1;
+							updateButtons(currentQuestion)
+						}
+						document.getElementById('option3').onclick = function() {
+							if(correctOption == 3) {points += 200; log.innerHTML += 'Correct! Gained 200 points<br>'} else {log.innerHTML += 'Incorrect. You\'ll get it next time!<br>'}
+							console.log("HELLO" + points)
+							updateProgress();
+							currentQuestion += 1;
+							updateButtons(currentQuestion)
+						}
+						document.getElementById('option4').onclick = function() {
+							if(correctOption == 4) {points += 200; log.innerHTML += 'Correct! Gained 200 points<br>'} else {log.innerHTML += 'Incorrect. You\'ll get it next time!<br>'}
+							updateProgress();
+							currentQuestion += 1;
+							updateButtons(currentQuestion)
+						}
+						/*$('form#attack').submit(function(event) {
+								damage = 10;
+								theirHealth -= damage;
+                socket.emit('attack', {'damage': damage, 'username': '{{username}}', match: '{{room_code}}'});
+                return false;
+            });*/
+        });
+    </script>
+</head>
+<body>
+    <div class = "mx-3">
+			<div class = "row">
+				<div class = "col-9 d-flex flex-column">
+					<div class = "row" style = "flex: 50;">
+						<canvas id = "canvas" style = "min-width: 100%; min-height: 100%;">
+						</canvas>
+						<script src="{{ url_for('static',filename='canvas.js') }}"></script>
+					</div>
+					<div class = "row sticky-bottom border-right border-top d-flex align-items-stretch" style = "display:flex; flex: 10;">
+						<button id = "light_attack" type="button" class="btn btn-dark btn-square-md m-2" style = "flex: 1;">Light Attack<br><p class="text-muted">100 points</button>
+						<button id = "heavy_attack"type="button" class="btn btn-dark btn-square-md m-2" style = "flex: 1;">Heavy Attack<br><p class="text-muted">170 points</p></button>
+						<button id = "heal" type="button" class="btn btn-dark btn-square-md m-2 " style = "flex: 1">Heal<br><p class="text-muted">130 points</button>
+						<button id = "evade" type="button" class="btn btn-dark btn-square-md m-2 disabled" style = "flex: 1; " disabled>Evade<br><p class="text-muted">Not Implemented</button>
+					</div>
+					<div class = "row border-right d-flex flex-row" style = "display: flex; flex: 1;">
+						<div class = "ml-2 pr-0 mb-1"style = "display: flex; flex: 1; font-size: 14px; font-weight: bold;">1000</div>
+						<div class = "progress mr-2" style = "min-width: 90%;">
+							<div class="progress__bar" id = "progress_bar"></div>
+						</div>
+					</div>
+				</div>
+				<div class = "col d-flex flex-column" style = "height: 100vh; background-color: #C4C4C4">
+					<h1 id = "question" class="display-4 my-5" style = "text-align:center; flex: 0.5;">Waiting for host</h1>
+					<button id = "option1" type="button" class="btn btn-dark btn-lg btn-block mb-4" style = "text-align: left; height: 70px; border-radius: 0 !important; padding-left: 20px; flex: 0.5;"></button>
+					<button id = "option2" type="button" class="btn btn-dark btn-lg btn-block mb-4" style = "text-align: left; height: 70px; border-radius: 0 !important; padding-left: 20px; flex: 0.5;"></button>
+					<button id = "option3" type="button" class="btn btn-dark btn-lg btn-block mb-4" style = "text-align: left; height: 70px; border-radius: 0 !important; padding-left: 20px; flex: 0.5;"></button>
+					<button id = "option4" type="button" class="btn btn-dark btn-lg btn-block mb-4" style = "text-align: left; height: 70px; border-radius: 0 !important; padding-left: 20px; flex: 0.5;"></button>
+					<div id = "terminal" class="terminal overflow-auto border mb-3 text-monospace" style = "flex: 5;"></div>
+				</div>
+			</div>
+		</div>
+</body>
+	<!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+</html>
